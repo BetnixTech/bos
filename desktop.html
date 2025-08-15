@@ -114,6 +114,20 @@
   </div>
 </div>
 
+<div class="icon" id="camera-icon">
+  <img src="camera.png"><br>Camera
+</div>
+
+<div class="window" id="camera-window" style="display:none;">
+  <div class="window-header">Camera</div>
+  <div class="window-body">
+    <video id="camera-stream" autoplay></video>
+    <button id="capture-btn">Capture</button>
+    <canvas id="snapshot" width="640" height="480"></canvas>
+  </div>
+</div>
+
+
 
 <script>
   // Clock
@@ -218,6 +232,27 @@
       const result = await response.json();
       alert("Bluetooth " + result.status);
   });
+
+    document.getElementById('camera-icon').addEventListener('dblclick', () => {
+    document.getElementById('camera-window').style.display = 'block';
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            document.getElementById('camera-stream').srcObject = stream;
+        })
+        .catch(err => alert("Camera access error: " + err));
+});
+
+document.getElementById('capture-btn').addEventListener('click', () => {
+    const video = document.getElementById('camera-stream');
+    const canvas = document.getElementById('snapshot');
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // Save image to localStorage or backend
+    const dataURL = canvas.toDataURL("image/png");
+    localStorage.setItem("camera_snapshot", dataURL);
+    alert("Photo captured!");
+});
+
 
 </script>
 
