@@ -1,0 +1,7 @@
+print("Booting bnOS...")
+cpu_info = run("drivers/cpp_driver.bn")
+ram_info = run("drivers/rust_driver.bn")
+print("CPU Info: " + cpu_info)
+print("RAM Info: " + ram_info)
+delay(2000)
+start_desktop()
