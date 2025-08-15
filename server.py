@@ -124,5 +124,32 @@ def run_asm():
             if os.path.exists(f):
                 os.remove(f)
 
+   @app.route("/toggle/wifi", methods=["POST"])
+def toggle_wifi():
+    state = request.json.get("state")
+    try:
+        # Linux example: use nmcli to control Wi-Fi
+        if state == "on":
+            subprocess.run(["nmcli", "radio", "wifi", "on"], check=True)
+        else:
+            subprocess.run(["nmcli", "radio", "wifi", "off"], check=True)
+        return jsonify({"status": state})
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)})
+
+@app.route("/toggle/bluetooth", methods=["POST"])
+def toggle_bluetooth():
+    state = request.json.get("state")
+    try:
+        # Linux example: use rfkill to control Bluetooth
+        if state == "on":
+            subprocess.run(["rfkill", "unblock", "bluetooth"], check=True)
+        else:
+            subprocess.run(["rfkill", "block", "bluetooth"], check=True)
+        return jsonify({"status": state})
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)})
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
