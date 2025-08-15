@@ -1,0 +1,36 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>bnOS Desktop</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="boot-screen" class="full-screen">
+    <h1>bnOS</h1>
+    <p>Loading system...</p>
+  </div>
+
+  <div id="desktop" class="hidden">
+    <div id="navbar">
+      <div id="launcher-btn">☰</div>
+      <div id="navbar-title">bnOS</div>
+      <div id="navbar-controls">
+        <input type="range" id="brightness" min="0" max="100" value="100">
+        <input type="range" id="volume" min="0" max="100" value="50">
+        <div id="navbar-clock"></div>
+      </div>
+    </div>
+    <div id="desktop-icons">
+      <div class="icon" data-app="terminal">💻 Terminal</div>
+      <div class="icon" data-app="calculator">🧮 Calculator</div>
+      <div class="icon" data-app="files">📁 Files</div>
+      <div class="icon" data-app="gallery">🖼 Gallery</div>
+      <div class="icon" data-app="settings">⚙️ Settings</div>
+    </div>
+    <div id="windows-container"></div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

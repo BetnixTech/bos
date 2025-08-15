@@ -1,0 +1,17 @@
+
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: #2e2e2e;
+  color: white;
+  user-select: none;
+  cursor: auto;
+}
+.hidden { display: none; }
+.full-screen { display: flex; justify-content: center; align-items: center; height: 100vh; background: black; }
+#navbar { background: #1a1a1a; padding: 5px 10px; display: flex; justify-content: space-between; align-items: center; }
+#navbar-controls { display: flex; align-items: center; gap: 10px; }
+.icon { width: 80px; padding: 5px; text-align: center; cursor: pointer; margin: 10px; display: inline-block; }
+.icon:hover { background: rgba(255, 255, 255, 0.1); border-radius: 8px; }
+.window { position: absolute; top: 100px; left: 100px; width: 350px; height: 250px; background: #3e3e3e; border: 2px solid #555; border-radius: 8px; padding: 10px; overflow: auto; }
+button { cursor: pointer; }
