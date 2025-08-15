@@ -127,6 +127,15 @@
   </div>
 </div>
 
+<div class="window" id="terminal-window">
+  <div class="window-header">Linux Terminal</div>
+  <div class="window-body">
+    <pre id="terminal-output"></pre>
+    <input type="text" id="terminal-input" placeholder="Enter Linux command...">
+  </div>
+</div>
+
+
 
 
 <script>
@@ -252,6 +261,28 @@ document.getElementById('capture-btn').addEventListener('click', () => {
     localStorage.setItem("camera_snapshot", dataURL);
     alert("Photo captured!");
 });
+
+const terminalInput = document.getElementById("terminal-input");
+const terminalOutput = document.getElementById("terminal-output");
+
+async function runLinuxCommand(cmd) {
+    const response = await fetch("/run/linux", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command: cmd })
+    });
+    const data = await response.json();
+    if (data.output) terminalOutput.textContent += "$ " + cmd + "\n" + data.output + "\n";
+    if (data.error) terminalOutput.textContent += "$ " + cmd + "\nError: " + data.error + "\n";
+}
+
+terminalInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        runLinuxCommand(terminalInput.value);
+        terminalInput.value = "";
+    }
+});
+
 
 
 </script>
