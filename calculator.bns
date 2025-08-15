@@ -1,0 +1,5 @@
+while true:
+    expr = input("Calc> ")
+    if expr == "exit": break
+    result = eval(expr)
+    print(result)
