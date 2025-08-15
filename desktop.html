@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>bnOS Desktop</title>
+<style>
+  body {
+    margin: 0;
+    background-color: #2e2e2e;
+    font-family: Arial, sans-serif;
+    cursor: url('cursor.cur'), auto;
+    overflow: hidden;
+  }
+  #navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background-color: #1a1a1a;
+    color: white;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    z-index: 1000;
+  }
+  #navbar span {
+    margin-right: 20px;
+  }
+  #desktop {
+    position: absolute;
+    top: 40px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+  }
+  .icon {
+    width: 80px;
+    text-align: center;
+    color: white;
+    margin: 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .icon img {
+    width: 64px;
+    height: 64px;
+  }
+  .window {
+    position: absolute;
+    background-color: #3e3e3e;
+    border: 2px solid #555;
+    border-radius: 8px;
+    width: 350px;
+    height: 250px;
+    color: white;
+    padding: 5px;
+    display: none;
+    z-index: 500;
+  }
+  .window-header {
+    background-color: #555;
+    cursor: move;
+    padding: 5px;
+    font-weight: bold;
+  }
+  .window-body {
+    padding: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div id="navbar">
+  <span id="clock">00:00:00</span>
+  <label>Brightness: <input type="range" id="brightness" min="0" max="100" value="100"></label>
+  <label>Volume: <input type="range" id="volume" min="0" max="100" value="50"></label>
+  <button id="launcher-btn">☰ Launcher</button>
+</div>
+
+<div id="desktop">
+  <div class="icon" id="terminal-icon"><img src="terminal.png"><br>Terminal</div>
+  <div class="icon" id="calculator-icon"><img src="calculator.png"><br>Calculator</div>
+  <div class="icon" id="files-icon"><img src="files.png"><br>Files</div>
+  <div class="icon" id="gallery-icon"><img src="gallery.png"><br>Gallery</div>
+  <div class="icon" id="settings-icon"><img src="settings.png"><br>Settings</div>
+
+  <!-- Example Windows -->
+  <div class="window" id="terminal-window">
+    <div class="window-header">Terminal</div>
+    <div class="window-body">
+      <textarea style="width:100%;height:80%;background:#2e2e2e;color:white;" placeholder="Type code here..."></textarea>
+    </div>
+  </div>
+
+  <div class="window" id="calculator-window">
+    <div class="window-header">Calculator</div>
+    <div class="window-body">
+      <input type="text" id="calc-input" style="width:100%;background:#2e2e2e;color:white;">
+      <button id="calc-btn">=</button>
+      <div id="calc-result"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Clock
+  function updateClock() {
+    const clock = document.getElementById('clock');
+    const now = new Date();
+    clock.textContent = now.toLocaleTimeString();
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // Desktop icons & double-click
+  function makeWindowDraggable(win) {
+    const header = win.querySelector('.window-header');
+    let offsetX, offsetY, isDown = false;
+    header.onmousedown = e => {
+      isDown = true;
+      offsetX = e.clientX - win.offsetLeft;
+      offsetY = e.clientY - win.offsetTop;
+      win.style.zIndex = 1000;
+    };
+    document.onmouseup = () => isDown = false;
+    document.onmousemove = e => {
+      if (!isDown) return;
+      win.style.left = e.clientX - offsetX + 'px';
+      win.style.top = e.clientY - offsetY + 'px';
+    };
+  }
+
+  function openWindow(winId) {
+    const win = document.getElementById(winId);
+    win.style.display = 'block';
+    win.style.left = '100px';
+    win.style.top = '100px';
+    makeWindowDraggable(win);
+  }
+
+  const icons = [
+    {icon: 'terminal-icon', window: 'terminal-window'},
+    {icon: 'calculator-icon', window: 'calculator-window'}
+  ];
+
+  icons.forEach(item => {
+    let lastClick = 0;
+    const el = document.getElementById(item.icon);
+    el.addEventListener('click', () => {
+      const now = Date.now();
+      if (now - lastClick < 300) { // double click
+        openWindow(item.window);
+      }
+      lastClick = now;
+    });
+  });
+
+  // Calculator
+  document.getElementById('calc-btn').onclick = () => {
+    const input = document.getElementById('calc-input').value;
+    try {
+      document.getElementById('calc-result').textContent = eval(input);
+    } catch(e) {
+      document.getElementById('calc-result').textContent = "Error";
+    }
+  };
+
+  // Brightness control
+  const brightnessSlider = document.getElementById('brightness');
+  brightnessSlider.oninput = () => {
+    document.body.style.filter = `brightness(${brightnessSlider.value}%)`;
+  };
+
+  // Volume control (dummy example)
+  const volumeSlider = document.getElementById('volume');
+  volumeSlider.oninput = () => {
+    console.log("Volume:", volumeSlider.value);
+  };
+
+  // Launcher button (dummy)
+  document.getElementById('launcher-btn').onclick = () => {
+    alert("Launcher clicked!");
+  };
+</script>
+
+</body>
+</html>
