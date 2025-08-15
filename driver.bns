@@ -1,0 +1,7 @@
+# Run C++ code from Terminal
+code = get_input()
+save_file("temp.cpp", code)
+output = system("g++ temp.cpp -o temp && ./temp")
+print(output)
+delete_file("temp.cpp")
+delete_file("temp")
