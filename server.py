@@ -149,6 +149,16 @@ def toggle_bluetooth():
         return jsonify({"status": state})
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)})
+        
+@app.route("/run/linux", methods=["POST"])
+def run_linux():
+    command = request.json.get("command", "")
+    try:
+        # Run the command on the host Linux system
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        return jsonify({"output": result.stdout + result.stderr})
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 
 if __name__ == "__main__":
