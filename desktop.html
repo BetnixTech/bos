@@ -105,6 +105,16 @@
   </div>
 </div>
 
+<!-- Settings Window -->
+<div class="window" id="settings-window">
+  <div class="window-header">Settings</div>
+  <div class="window-body">
+    <label>Wi-Fi: <input type="checkbox" id="wifi-toggle"></label><br>
+    <label>Bluetooth: <input type="checkbox" id="bluetooth-toggle"></label><br>
+  </div>
+</div>
+
+
 <script>
   // Clock
   function updateClock() {
@@ -184,6 +194,31 @@
   document.getElementById('launcher-btn').onclick = () => {
     alert("Launcher clicked!");
   };
+
+  // Wi-Fi toggle
+  document.getElementById('wifi-toggle').addEventListener('change', async (e) => {
+      const state = e.target.checked ? "on" : "off";
+      const response = await fetch("/toggle/wifi", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state })
+      });
+      const result = await response.json();
+      alert("Wi-Fi " + result.status);
+  });
+
+// Bluetooth toggle
+  document.getElementById('bluetooth-toggle').addEventListener('change', async (e) => {
+      const state = e.target.checked ? "on" : "off";
+      const response = await fetch("/toggle/bluetooth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state })
+      });
+      const result = await response.json();
+      alert("Bluetooth " + result.status);
+  });
+
 </script>
 
 </body>
