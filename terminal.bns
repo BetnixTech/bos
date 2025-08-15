@@ -1,0 +1,11 @@
+while true:
+    command = input("bnOS> ")
+    if command.starts_with("cpp "):
+        output = run("drivers/cpp_driver.bn", command[4:])
+    elif command.starts_with("rust "):
+        output = run("drivers/rust_driver.bn", command[5:])
+    elif command.starts_with("asm "):
+        output = run("drivers/asm_driver.bn", command[4:])
+    else:
+        output = execute_python(command)
+    print(output)
