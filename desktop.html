@@ -199,6 +199,13 @@ input[type="checkbox"] {
   </div>
 </div>
 
+<div id="filesApp">
+    <h2>Files App</h2>
+    <div id="driveList"></div>
+    <ul id="fileList"></ul>
+</div>
+
+
 
 
 
@@ -359,6 +366,39 @@ async function loadFiles(path) {
     let files = await res.json();
     console.log(files);
 }
+
+async function listDrives() {
+    const res = await fetch("/drives");
+    const drives = await res.json();
+
+    const driveList = document.getElementById("driveList");
+    driveList.innerHTML = "";
+
+    drives.forEach(drive => {
+        let btn = document.createElement("button");
+        btn.textContent = `${drive.device} (${drive.mountpoint})`;
+        btn.onclick = () => listFiles(drive.mountpoint);
+        driveList.appendChild(btn);
+    });
+}
+
+async function listFiles(path) {
+    const res = await fetch(`/files/${encodeURIComponent(path)}`);
+    const files = await res.json();
+
+    const fileList = document.getElementById("fileList");
+    fileList.innerHTML = "";
+
+    files.forEach(file => {
+        let li = document.createElement("li");
+        li.textContent = file;
+        fileList.appendChild(li);
+    });
+}
+
+// Load drives on startup
+window.onload = listDrives;
+
   
 </script>
 
