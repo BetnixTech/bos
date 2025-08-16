@@ -1,9 +1,13 @@
-extern void terminal_clear(void);
-extern void terminal_write(const char* str);
-extern void shell_run(void);
+#include "console.h"
+#include "fs.h"
+#include "shell.h"
 
-void kmain(void) {
+void kernel_main() {
     terminal_clear();
-    terminal_write("Betnix OS Booted!\nType 'help' for a list of commands.\n");
+    terminal_write("Betnix OS Booted!\n");
+
+    fs_init();
+    fs_load_disk("disk.bin");  // Load programs from disk
+
     shell_run();
 }
