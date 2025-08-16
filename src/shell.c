@@ -10,12 +10,14 @@
 static char cmd_buffer[CMD_BUF_SIZE];
 static size_t cmd_len = 0;
 
+// Display the shell prompt
 void shell_prompt() {
     terminal_write("\nBetnix> ");
 }
 
+// Execute a command entered by the user
 void shell_execute(const char* cmd) {
-    if (cmd[0] == 0) return;
+    if (cmd[0] == 0) return; // Empty command, do nothing
 
     if (!strcmp(cmd, "help")) {
         terminal_write("\nCommands:\n");
@@ -33,11 +35,11 @@ void shell_execute(const char* cmd) {
         terminal_write(cmd + 5);
     }
     else if (!strcmp(cmd, "ls")) {
-        fs_list();
+        fs_list(); // List files from the disk
     }
     else if (strncmp(cmd, "run ", 4) == 0) {
         const char* name = cmd + 4;
-        fs_run(name);
+        fs_run(name); // Load and run a .bns program
     }
     else {
         terminal_write("\nUnknown command: ");
@@ -45,24 +47,27 @@ void shell_execute(const char* cmd) {
     }
 }
 
+// Main shell loop
 void shell_run() {
     shell_prompt();
 
     while (1) {
         char c = keyboard_read();
         if (c) {
-            if (c == '\n') {
+            if (c == '\n') { // Enter pressed
                 cmd_buffer[cmd_len] = 0;
                 shell_execute(cmd_buffer);
                 cmd_len = 0;
                 shell_prompt();
-            } else if (c == '\b') {
+            } 
+            else if (c == '\b') { // Backspace
                 if (cmd_len > 0) cmd_len--;
-            } else {
+            } 
+            else { // Regular character
                 if (cmd_len < CMD_BUF_SIZE - 1) {
                     cmd_buffer[cmd_len++] = c;
                     char str[2] = {c, 0};
-                    terminal_write(str);
+                    terminal_write(str); // Echo typed character
                 }
             }
         }
