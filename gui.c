@@ -14,6 +14,8 @@
 #define TITLE_HEIGHT  20
 #define MIN_WIDTH     80
 #define MIN_HEIGHT    60
+#define MAX_PROG_ROWS 20
+#define MAX_PROG_COLS 50
 
 uint32_t* framebuffer = (uint32_t*)0xB8000;
 int mouse_x = 100;
@@ -61,7 +63,7 @@ bool mouse_over(int x, int y, int w, int h) {
 
 void draw_icon(icon_t* icon) {
     draw_rect(icon->x, icon->y, ICON_SIZE, ICON_SIZE, 0x888888);
-    terminal_write(icon->name); // placeholder label
+    terminal_write(icon->name); // placeholder for label
 }
 
 int load_icons() {
@@ -106,42 +108,52 @@ typedef struct {
     bool resizing;
     int resize_start_w, resize_start_h;
     bool closing;
+
+    // Program output buffer
+    char content[MAX_PROG_ROWS][MAX_PROG_COLS];
+    int rows, cols;
 } window_t;
 
 #define MAX_WINDOWS 16
 window_t windows[MAX_WINDOWS];
 int window_count = 0;
 
-// Draw a window including title, body, resize handle, close button, and output area
+// Draw a window with content
 void draw_window(window_t* win) {
     uint32_t bg_color = win->active ? 0xCCCCCC : 0xAAAAAA;
     uint32_t title_color = win->active ? 0x555555 : 0x333333;
 
-    draw_rect(win->x, win->y, win->w, win->h, bg_color);               // body
-    draw_rect(win->x, win->y, win->w, TITLE_HEIGHT, title_color);     // title
+    draw_rect(win->x, win->y, win->w, win->h, bg_color);             // body
+    draw_rect(win->x, win->y, win->w, TITLE_HEIGHT, title_color);    // title
     draw_rect(win->x + win->w - RESIZE_HANDLE, win->y + win->h - RESIZE_HANDLE, RESIZE_HANDLE, RESIZE_HANDLE, 0xFF00FF); // resize handle
     draw_rect(win->x + win->w - TITLE_HEIGHT, win->y, TITLE_HEIGHT, TITLE_HEIGHT, 0xFF0000); // close button
 
-    // Program output area
-    draw_rect(win->x + 5, win->y + TITLE_HEIGHT + 5, win->w - 10, win->h - TITLE_HEIGHT - 10, 0xFFFFFF);
-
-    // Title text placeholder
-    terminal_write(win->title);
+    // Render program content
+    int char_w = (win->w - 10)/MAX_PROG_COLS;
+    int char_h = (win->h - TITLE_HEIGHT - 10)/MAX_PROG_ROWS;
+    for (int r = 0; r < win->rows; r++) {
+        for (int c = 0; c < win->cols; c++) {
+            char ch = win->content[r][c];
+            if (ch) {
+                draw_rect(win->x + 5 + c*char_w, win->y + TITLE_HEIGHT + 5 + r*char_h, char_w-1, char_h-1, 0x000000); // black char block
+            }
+        }
+    }
 }
 
-// Update window interactions: drag, resize, close
+// Update window interactions
 void update_windows() {
     for (int i = window_count-1; i >= 0; i--) {
         window_t* win = &windows[i];
 
-        // Drag title
+        // Drag
         if (mouse_pressed && mouse_over(win->x, win->y, win->w - TITLE_HEIGHT, TITLE_HEIGHT)) {
             win->being_dragged = true;
             win->drag_offset_x = mouse_x - win->x;
             win->drag_offset_y = mouse_y - win->y;
             win->active = true;
 
-            // bring to top
+            // Bring to top
             window_t temp = windows[i];
             for (int j = i; j < window_count-1; j++) windows[j] = windows[j+1];
             windows[window_count-1] = temp;
@@ -174,7 +186,7 @@ void update_windows() {
             }
         }
 
-        // Close
+        // Close button
         if (mouse_pressed && mouse_over(win->x + win->w - TITLE_HEIGHT, win->y, TITLE_HEIGHT, TITLE_HEIGHT)) {
             win->closing = true;
         }
@@ -191,6 +203,7 @@ void update_windows() {
     }
 }
 
+// Open a program window with buffer
 void open_program_window(const char* name) {
     if (window_count >= MAX_WINDOWS) return;
 
@@ -198,14 +211,20 @@ void open_program_window(const char* name) {
     strncpy(win->title, name, 63);
     win->x = 50 + window_count*20;
     win->y = 50 + window_count*20;
-    win->w = 200;
-    win->h = 150;
+    win->w = 300;
+    win->h = 200;
     win->active = true;
     win->being_dragged = false;
     win->resizing = false;
     win->closing = false;
 
-    fs_run(name); // program content inside window (currently placeholder)
+    // Initialize program buffer
+    win->rows = MAX_PROG_ROWS;
+    win->cols = MAX_PROG_COLS;
+    memset(win->content, 0, sizeof(win->content));
+
+    // Run program into buffer
+    fs_run_into_buffer(name, win->content, MAX_PROG_ROWS, MAX_PROG_COLS);
 }
 
 // ------------------- Mouse -------------------
