@@ -1,75 +1,10 @@
-#include <stdbool.h>
-#include <stddef.h>
 #include <string.h>
-#include "console.h"
-#include "keyboard.h"
 #include "fs.h"
 
-#define CMD_BUF_SIZE 128
+void shell_program(char output[MAX_PROG_ROWS][MAX_PROG_COLS], int rows, int cols) {
+    const char* msg="Welcome to Betnix Shell!";
+    for(int i=0;i<strlen(msg);i++) output[0][i] = msg[i];
 
-static char cmd_buffer[CMD_BUF_SIZE];
-static size_t cmd_len = 0;
-
-// Display the shell prompt
-void shell_prompt() {
-    terminal_write("\nBetnix> ");
-}
-
-// Execute a command entered by the user
-void shell_execute(const char* cmd) {
-    if (cmd[0] == 0) return; // Empty command, do nothing
-
-    if (!strcmp(cmd, "help")) {
-        terminal_write("\nCommands:\n");
-        terminal_write("  help   - Show this help message\n");
-        terminal_write("  clear  - Clear the screen\n");
-        terminal_write("  echo   - Echo back text\n");
-        terminal_write("  ls     - List files on disk\n");
-        terminal_write("  run    - Run a program\n");
-    }
-    else if (!strcmp(cmd, "clear")) {
-        terminal_clear();
-    }
-    else if (strncmp(cmd, "echo ", 5) == 0) {
-        terminal_write("\n");
-        terminal_write(cmd + 5);
-    }
-    else if (!strcmp(cmd, "ls")) {
-        fs_list(); // List files from the disk
-    }
-    else if (strncmp(cmd, "run ", 4) == 0) {
-        const char* name = cmd + 4;
-        fs_run(name); // Load and run a .bns program
-    }
-    else {
-        terminal_write("\nUnknown command: ");
-        terminal_write(cmd);
-    }
-}
-
-// Main shell loop
-void shell_run() {
-    shell_prompt();
-
-    while (1) {
-        char c = keyboard_read();
-        if (c) {
-            if (c == '\n') { // Enter pressed
-                cmd_buffer[cmd_len] = 0;
-                shell_execute(cmd_buffer);
-                cmd_len = 0;
-                shell_prompt();
-            } 
-            else if (c == '\b') { // Backspace
-                if (cmd_len > 0) cmd_len--;
-            } 
-            else { // Regular character
-                if (cmd_len < CMD_BUF_SIZE - 1) {
-                    cmd_buffer[cmd_len++] = c;
-                    char str[2] = {c, 0};
-                    terminal_write(str); // Echo typed character
-                }
-            }
-        }
-    }
+    const char* prompt="Betnix> ";
+    for(int i=0;i<strlen(prompt);i++) output[1][i] = prompt[i];
 }
