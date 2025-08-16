@@ -22,23 +22,36 @@ def run_python():
 # -----------------------------
 # Run C code
 # -----------------------------
+# Updated route to run C code securely in a Docker container
 @app.route("/run/c", methods=["POST"])
 def run_c():
     code = request.json.get("code", "")
-    c_file = "/mnt/data/bnOS/apps/temp.c"
-    exe_file = "/mnt/data/bnOS/apps/temp"
-    with open(c_file, "w") as f:
-        f.write(code)
     try:
-        subprocess.run(["gcc", c_file, "-o", exe_file], check=True)
-        result = subprocess.run([exe_file], capture_output=True, text=True)
+        # Create a temporary file inside a specific directory
+        temp_dir = "/tmp/bnos-temp"
+        os.makedirs(temp_dir, exist_ok=True)
+        c_file = os.path.join(temp_dir, "temp.c")
+        with open(c_file, "w") as f:
+            f.write(code)
+
+        # Run compilation and execution commands inside the Docker container
+        command = [
+            "docker", "run", "--rm",
+            "-v", f"{temp_dir}:/app", # Mount the temporary directory
+            "your-docker-image-name", # Replace with the name you give your Docker image
+            "sh", "-c", "gcc /app/temp.c -o /app/temp && /app/temp"
+        ]
+        
+        result = subprocess.run(command, capture_output=True, text=True, check=True)
         return jsonify({"output": result.stdout})
+    except subprocess.CalledProcessError as e:
+        return jsonify({"error": e.stderr})
     except Exception as e:
         return jsonify({"error": str(e)})
     finally:
-        for f in [c_file, exe_file]:
-            if os.path.exists(f):
-                os.remove(f)
+        # Clean up the temporary directory
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
 
 # -----------------------------
 # Run C++ code
