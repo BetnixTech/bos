@@ -201,6 +201,75 @@ def files(filepath):
     else:
         return jsonify({"error": "Path not found"}), 404
 
+# New route to create a new empty file
+@app.route("/file", methods=["POST"])
+def create_file():
+    path = request.json.get("path", "")
+    full_path = os.path.join(os.getcwd(), path.strip('/'))
+    try:
+        open(full_path, 'a').close()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+# New route to create a new folder
+@app.route("/folder", methods=["POST"])
+def create_folder():
+    path = request.json.get("path", "")
+    full_path = os.path.join(os.getcwd(), path.strip('/'))
+    try:
+        os.makedirs(full_path)
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+# New route to upload a file
+@app.route("/upload", methods=["POST"])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    file = request.files['file']
+    path = request.form.get("path", "")
+    full_path = os.path.join(os.getcwd(), path.strip('/'), file.filename)
+    try:
+        file.save(full_path)
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+# New route to delete a file or folder
+@app.route("/delete", methods=["POST"])
+def delete_item():
+    path = request.json.get("path", "")
+    full_path = os.path.join(os.getcwd(), path.strip('/'))
+    try:
+        if os.path.isdir(full_path):
+            shutil.rmtree(full_path)
+        else:
+            os.remove(full_path)
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+# Updated files route to list files and folders with metadata
+@app.route("/files", methods=["GET"])
+def files():
+    path = request.args.get("path", "/")
+    full_path = os.path.join(os.getcwd(), path.strip('/'))
+
+    if not os.path.exists(full_path) or not os.path.isdir(full_path):
+        return jsonify({"error": "Path not found or is not a directory"}), 404
+
+    items = []
+    for item in os.listdir(full_path):
+        item_path = os.path.join(full_path, item)
+        items.append({
+            "name": item,
+            "path": os.path.join(path, item),
+            "is_dir": os.path.isdir(item_path)
+        })
+    return jsonify(items)
+
 
 
 if __name__ == "__main__":
