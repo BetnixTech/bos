@@ -133,3 +133,4 @@ char keyboard_read() {
     // Placeholder: return 0 until real keyboard driver implemented
     return 0;
 }
+
