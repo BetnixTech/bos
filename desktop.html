@@ -224,6 +224,17 @@ input[type="checkbox"] {
     <ul id="fileList"></ul>
 </div>
 
+<div class="window" id="settings-window">
+  <div class="window-header">Settings</div>
+  <div class="window-body">
+    <h4>Network & Connectivity</h4>
+    <p>Wi-Fi: <span id="wifi-status">Unknown</span></p>
+    <label>Wi-Fi: <input type="checkbox" id="wifi-toggle"></label><br>
+    <p>Bluetooth: <span id="bluetooth-status">Unknown</span></p>
+    <label>Bluetooth: <input type="checkbox" id="bluetooth-toggle"></label><br>
+  </div>
+</div>
+
 
 
 
@@ -419,6 +430,51 @@ async function listFiles(path) {
 window.onload = listDrives;
 
   
+</script>
+<script>
+  // New function to update the status text in the UI
+async function updateStatus() {
+    // Fetch WiFi status
+    const wifiRes = await fetch("/status/wifi");
+    const wifiData = await wifiRes.json();
+    document.getElementById("wifi-status").textContent = wifiData.status;
+    document.getElementById("wifi-toggle").checked = wifiData.status === "on";
+
+    // Fetch Bluetooth status
+    const btRes = await fetch("/status/bluetooth");
+    const btData = await btRes.json();
+    document.getElementById("bluetooth-status").textContent = btData.status;
+    document.getElementById("bluetooth-toggle").checked = btData.status === "on";
+}
+
+// Update status when the settings window is opened
+document.getElementById('settings-icon').addEventListener('dblclick', () => {
+    openWindow('settings-window');
+    updateStatus();
+});
+
+// Update the toggle event listeners
+document.getElementById('wifi-toggle').addEventListener('change', async (e) => {
+    const state = e.target.checked ? "on" : "off";
+    const response = await fetch("/toggle/wifi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state })
+    });
+    // Immediately fetch and update the status after the action
+    updateStatus();
+});
+
+document.getElementById('bluetooth-toggle').addEventListener('change', async (e) => {
+    const state = e.target.checked ? "on" : "off";
+    const response = await fetch("/toggle/bluetooth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state })
+    });
+    // Immediately fetch and update the status after the action
+    updateStatus();
+});
 </script>
 
 </body>
