@@ -5,7 +5,7 @@ KERNEL=$(OUTDIR)/kernel.bin
 ISO=bos.iso
 
 # All source files
-SRCS = src/kernel.c src/console.c src/gui.c src/fs.c src/shell.c src/editor.c src/game.c
+SRCS = src/kernel.c src/console.c src/gui.c src/fs.c src/shell.c src/editor.c src/game.c src/keyboard.c src/ports.c
 OBJS = $(patsubst src/%.c,$(OUTDIR)/%.o,$(SRCS))
 
 all: $(ISO)
