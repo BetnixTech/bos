@@ -4,40 +4,45 @@ OUTDIR=out
 KERNEL=$(OUTDIR)/kernel.bin
 ISO=bos.iso
 
-# C source files
-SRCS = src/kernel.c src/console.c src/gui.c src/fs.c src/shell.c src/editor.c src/game.c \
-       src/keyboard.c src/mouse.c src/task.c src/timer.c
-OBJS = $(patsubst src/%.c,$(OUTDIR)/%.o,$(SRCS))
+# Source files
+SRCS = src/kernel.c src/console.c src/gui.c src/fs.c src/shell.c src/editor.c \
+       src/game.c src/ports.c src/paging.c src/kheap.c src/irq.c src/isr.c \
+       src/timer.c src/task.c src/keyboard.c src/mouse.c src/syscall.c src/ata.c
 
-# Assembly source files
-ASMS = src/task_switch.asm
-ASMOBJS = $(patsubst src/%.asm,$(OUTDIR)/%.o,$(ASMS))
+# Assembly files
+ASMS = src/isr_stubs.asm src/paging_asm.S
+
+# Object files
+OBJS = $(patsubst src/%.c,$(OUTDIR)/%.o,$(SRCS)) \
+       $(patsubst src/%.asm,$(OUTDIR)/%.o,$(ASMS))
 
 all: $(ISO)
 
+# Compile C files
 $(OUTDIR)/%.o: src/%.c
 	mkdir -p $(OUTDIR)
-	i686-elf-gcc -ffreestanding -m32 -O2 -c $< -o $@ || gcc -ffreestanding -m32 -O2 -c $< -o $@
+	i686-elf-gcc -ffreestanding -O2 -c $< -o $@
 
+# Compile assembly files
 $(OUTDIR)/%.o: src/%.asm
 	mkdir -p $(OUTDIR)
 	nasm -f elf32 $< -o $@
 
-$(KERNEL): $(OBJS) $(ASMOBJS) src/linker.ld
-	i686-elf-ld -T src/linker.ld -o $(KERNEL) $(OBJS) $(ASMOBJS) || \
-	ld -m elf_i386 -T src/linker.ld -o $(KERNEL) $(OBJS) $(ASMOBJS)
+# Link kernel
+$(KERNEL): $(OBJS)
+	i686-elf-ld -T src/linker.ld -o $(KERNEL) $(OBJS)
 
+# Create ISO
 iso: $(KERNEL)
 	@mkdir -p iso/boot/grub
 	cp $(KERNEL) iso/boot/kernel.bin
 	cp boot/grub/grub.cfg iso/boot/grub/grub.cfg
 	grub-mkrescue -o $(ISO) iso 2>/dev/null || (echo "grub-mkrescue failed; ensure grub & xorriso installed" && exit 1)
 
-$(ISO): iso
-	@true
-
+# Run in QEMU
 run: $(ISO)
 	qemu-system-i386 -cdrom $(ISO) -m 512M
 
+# Clean build files
 clean:
 	rm -rf iso out $(ISO)
