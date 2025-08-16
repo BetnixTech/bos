@@ -36,6 +36,7 @@ void gui_init();
 void gui_update();
 void gui_handle_input();
 void mouse_update();
+void terminal_move_cursor(int row, int col);
 
 // Add a program window
 void add_window(const char* name, int x, int y, int w, int h) {
@@ -64,6 +65,8 @@ void kmain() {
     // Make first window active
     active_window = 0;
     windows[0].active = 1;
+
+    terminal_write("Boot complete!\n");
 
     // Main kernel loop
     while(1) {
@@ -99,9 +102,13 @@ void gui_update() {
     for(int i=0;i<window_count;i++)
         draw_window(&windows[i]);
 
-    // Draw cursor
+    // Draw cursor at current typing position
     if(cursor_visible) {
-        terminal_write("O"); // simple circular cursor
+        Window* win = &windows[active_window];
+        int row = win->height-1;
+        int col = kb_len;
+        terminal_move_cursor(row, col); // implement in console.c
+        terminal_write("_");            // underscore cursor
     }
 }
 
@@ -109,13 +116,22 @@ void gui_handle_input() {
     char c = keyboard_read();
     if(c) {
         Window* win = &windows[active_window];
-        if(kb_len < MAX_PROG_COLS-1) {
+
+        if(c == '\b') {
+            if(kb_len > 0) kb_len--;
+            int row = win->height-1;
+            for(int i=0;i<MAX_PROG_COLS;i++)
+                win->buffer[row][i] = (i<kb_len)? kb_buffer[i]:' ';
+        }
+        else if(c == '\n') {
+            kb_len = 0;
+        }
+        else if(kb_len < MAX_PROG_COLS-1) {
             kb_buffer[kb_len++] = c;
             kb_buffer[kb_len] = 0;
             int row = win->height-1;
             for(int i=0;i<kb_len;i++) win->buffer[row][i] = kb_buffer[i];
         }
-        if(c=='\n') kb_len=0;
     }
 }
 
