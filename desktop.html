@@ -4,6 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>bnOS Desktop</title>
+<link rel="stylesheet" href="js-dos.css">
+  <script src="js-dos.js"></script>
+</head>
+<body>
+
+  <!-- Desktop icons, etc. -->
+  <div class="desktop-icon" ondblclick="launchDoom()">DOOM</div>
+
+  <!-- Game window -->
+  <div id="doom-window" style="display:none; width:800px; height:600px; position:absolute; top:50px; left:50px; background:black;">
+    <div id="jsdos" style="width:100%; height:100%;"></div>
+  </div>
+
+  <script>
+    function launchDoom() {
+      document.getElementById("doom-window").style.display = "block";
+      Dos(document.getElementById("jsdos")).run("/static/games/doom.jsdos");
+    }
+  </script>
 <style>
   /* -------------------------------
    Desktop Window General Style
