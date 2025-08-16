@@ -347,8 +347,19 @@ terminalInput.addEventListener("keydown", (e) => {
     }
 });
 
+async function loadDrives() {
+    let res = await fetch("/drives");
+    let drives = await res.json();
+    console.log(drives);
+    // Populate in Files app UI
+}
 
-
+async function loadFiles(path) {
+    let res = await fetch(`/files/${encodeURIComponent(path)}`);
+    let files = await res.json();
+    console.log(files);
+}
+  
 </script>
 
 </body>
