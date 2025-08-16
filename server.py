@@ -186,9 +186,16 @@ def drives():
 
 @app.route("/files/<path:filepath>", methods=["GET"])
 def files(filepath):
-    if os.path.isfile(filepath):
-        return send_file(filepath, as_attachment=True)
-    return jsonify(list_files(filepath))
+    # Ensure absolute path
+    full_path = os.path.join("/", filepath)
+
+    if os.path.isfile(full_path):
+        return send_file(full_path, as_attachment=True)
+    elif os.path.isdir(full_path):
+        return jsonify(os.listdir(full_path))
+    else:
+        return jsonify({"error": "Path not found"}), 404
+
 
 
 if __name__ == "__main__":
