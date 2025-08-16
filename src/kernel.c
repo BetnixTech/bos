@@ -1,7 +1,7 @@
 #include "console.h"
 #include "fs.h"
 #include "keyboard.c"
-#include "mouse.c"
+#include "mouse.h"
 #include "task.h"
 #include <stdint.h>
 #include <stddef.h>
@@ -31,6 +31,7 @@ size_t kb_len = 0;
 void gui_init();
 void gui_update();
 void gui_handle_input();
+void gui_handle_mouse();
 void draw_window(Window* win);
 void add_window(const char* name, int x, int y, int w, int h);
 
@@ -39,6 +40,7 @@ void kmain() {
     terminal_write("Booting Betnix OS...\n");
 
     gui_init();
+    mouse_init();
 
     add_window("shell", 0,0,MAX_PROG_ROWS,MAX_PROG_COLS);
     add_window("editor",0,10,MAX_PROG_ROWS,MAX_PROG_COLS);
@@ -47,14 +49,16 @@ void kmain() {
 
     terminal_write("Boot complete!\n");
 
-    // Add shell & editor tasks
+    // Add tasks
     task_add(shell_run, "shell");
     task_add(editor_run, "editor");
 
     while(1) {
-        gui_update();
-        gui_handle_input();
+        keyboard_update();
         mouse_update();
+        gui_handle_input();
+        gui_handle_mouse();
+        gui_update();
         task_run();
         task_switch();
     }
@@ -110,6 +114,44 @@ void gui_handle_input() {
             int row=win->height-1;
             for(int i=0;i<kb_len;i++) win->buffer[row][i]=kb_buffer[i];
         }
+    }
+}
+
+void gui_handle_mouse() {
+    int mx = mouse_get_x();
+    int my = mouse_get_y();
+
+    // Check clicks to change active window
+    if(mouse_left_pressed()) {
+        for(int i=0;i<window_count;i++) {
+            Window* win = &windows[i];
+            if(mx >= win->x && mx < win->x+win->width &&
+               my >= win->y && my < win->y+win->height) {
+                   active_window = i;
+                   win->active = 1;
+               } else {
+                   win->active = 0;
+               }
+        }
+    }
+
+    // Drag active window
+    static int drag_offset_x = 0;
+    static int drag_offset_y = 0;
+    static int dragging = 0;
+
+    Window* win = &windows[active_window];
+    if(mouse_left_pressed() && mx >= win->x && mx < win->x+win->width &&
+       my >= win->y && my < win->y+win->height) {
+           if(!dragging) {
+               drag_offset_x = mx - win->x;
+               drag_offset_y = my - win->y;
+               dragging = 1;
+           }
+           win->x = mx - drag_offset_x;
+           win->y = my - drag_offset_y;
+    } else {
+        dragging = 0;
     }
 }
 
