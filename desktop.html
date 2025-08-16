@@ -299,6 +299,18 @@ input[type="checkbox"] {
   </div>
 </div>
 
+<div class="window-body">
+    <div id="file-manager-controls">
+        <button onclick="createFile()">New File</button>
+        <button onclick="createFolder()">New Folder</button>
+        <input type="file" id="file-upload" style="display: none;" onchange="uploadFile()">
+        <button onclick="document.getElementById('file-upload').click();">Upload File</button>
+    </div>
+    <div id="file-manager-breadcrumb">/</div>
+    <ul id="fileList"></ul>
+</div>
+
+
 
 
 
@@ -561,6 +573,106 @@ function showNotification(message, type = 'info') {
     }, 5000);
 }
 </script>
+
+<script>
+let currentPath = '/';
+
+async function listFiles(path) {
+    const res = await fetch(`/files?path=${encodeURIComponent(path)}`);
+    const data = await res.json();
+    const fileList = document.getElementById("fileList");
+    fileList.innerHTML = "";
+
+    if (data.error) {
+        showNotification(`Error: ${data.error}`);
+        return;
+    }
+
+    if (path !== '/') {
+        let backLi = document.createElement("li");
+        backLi.innerHTML = '📁 <a href="#" onclick="goBack()">..</a>';
+        fileList.appendChild(backLi);
+    }
+
+    data.forEach(item => {
+        let li = document.createElement("li");
+        if (item.is_dir) {
+            li.innerHTML = `📁 <a href="#" onclick="listFiles('${item.path}')">${item.name}</a>`;
+        } else {
+            li.innerHTML = `📄 <a href="/files?path=${encodeURIComponent(item.path)}" download>${item.name}</a>`;
+        }
+        fileList.appendChild(li);
+    });
+    currentPath = path;
+    document.getElementById("file-manager-breadcrumb").textContent = currentPath;
+}
+
+function goBack() {
+    const parts = currentPath.split('/').filter(p => p.length > 0);
+    parts.pop();
+    const newPath = '/' + parts.join('/');
+    listFiles(newPath === '/' ? '/' : newPath);
+}
+
+async function createFile() {
+    const fileName = prompt("Enter new file name:");
+    if (fileName) {
+        const response = await fetch('/file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: `${currentPath}/${fileName}` })
+        });
+        const result = await response.json();
+        if (result.error) showNotification(`Error: ${result.error}`);
+        else listFiles(currentPath);
+    }
+}
+
+async function createFolder() {
+    const folderName = prompt("Enter new folder name:");
+    if (folderName) {
+        const response = await fetch('/folder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: `${currentPath}/${folderName}` })
+        });
+        const result = await response.json();
+        if (result.error) showNotification(`Error: ${result.error}`);
+        else listFiles(currentPath);
+    }
+}
+
+async function uploadFile() {
+    const fileInput = document.getElementById('file-upload');
+    const file = fileInput.files[0];
+    if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('path', currentPath);
+        const response = await fetch('/upload', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        if (result.error) showNotification(`Error: ${result.error}`);
+        else listFiles(currentPath);
+    }
+}
+
+async function deleteItem(path) {
+    if (confirm(`Are you sure you want to delete ${path}?`)) {
+        const response = await fetch('/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: path })
+        });
+        const result = await response.json();
+        if (result.error) showNotification(`Error: ${result.error}`);
+        else listFiles(currentPath);
+    }
+}
+</script>
+
 
 
 </body>
