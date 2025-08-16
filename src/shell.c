@@ -1,18 +1,10 @@
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
+#include "console.h"
+#include "keyboard.h"
+#include "fs.h"
 
-extern void terminal_write(const char* str);
-extern void terminal_clear(void);
-extern char keyboard_read(void);
-
-// External system functions
-extern void os_reboot(void);
-extern void sys_about(void);
-extern void sys_mem(void);
-extern int strcmp(const char*, const char*);
-extern int strncmp(const char*, const char*, size_t);
-
-// Max command length
 #define CMD_BUF_SIZE 128
 
 static char cmd_buffer[CMD_BUF_SIZE];
@@ -30,26 +22,22 @@ void shell_execute(const char* cmd) {
         terminal_write("  help   - Show this help message\n");
         terminal_write("  clear  - Clear the screen\n");
         terminal_write("  echo   - Echo back text\n");
-        terminal_write("  reboot - Reboot the OS\n");
-        terminal_write("  about  - Show OS info\n");
-        terminal_write("  mem    - Show approximate RAM\n");
+        terminal_write("  ls     - List files on disk\n");
+        terminal_write("  run    - Run a program\n");
     }
     else if (!strcmp(cmd, "clear")) {
         terminal_clear();
     }
-    else if (!strcmp(cmd, "reboot")) {
-        terminal_write("\nRebooting...\n");
-        os_reboot();
-    }
-    else if (!strcmp(cmd, "about")) {
-        sys_about();
-    }
-    else if (!strcmp(cmd, "mem")) {
-        sys_mem();
-    }
     else if (strncmp(cmd, "echo ", 5) == 0) {
         terminal_write("\n");
         terminal_write(cmd + 5);
+    }
+    else if (!strcmp(cmd, "ls")) {
+        fs_list();
+    }
+    else if (strncmp(cmd, "run ", 4) == 0) {
+        const char* name = cmd + 4;
+        fs_run(name);
     }
     else {
         terminal_write("\nUnknown command: ");
