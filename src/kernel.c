@@ -1,10 +1,11 @@
-// src/kernel.c
 #include "console.h"
 #include "fs.h"
+#include "keyboard.c"
+#include "mouse.c"
+#include "task.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
-#include "keyboard.c"  // Include keyboard driver
 
 #define MAX_WINDOWS 10
 #define MAX_PROG_ROWS 20
@@ -22,12 +23,7 @@ typedef struct {
 Window windows[MAX_WINDOWS];
 int window_count = 0;
 int active_window = 0;
-
-// Cursor
-int mouse_x = 10, mouse_y = 5;
 int cursor_visible = 1;
-
-// Keyboard buffer
 char kb_buffer[CMD_BUF_SIZE];
 size_t kb_len = 0;
 
@@ -35,51 +31,37 @@ size_t kb_len = 0;
 void gui_init();
 void gui_update();
 void gui_handle_input();
-void mouse_update();
-void terminal_move_cursor(int row, int col);
+void draw_window(Window* win);
+void add_window(const char* name, int x, int y, int w, int h);
 
-// Add a program window
-void add_window(const char* name, int x, int y, int w, int h) {
-    if(window_count >= MAX_WINDOWS) return;
-    Window* win = &windows[window_count++];
-    strncpy(win->title, name, 31);
-    win->width = w;
-    win->height = h;
-    win->x = x;
-    win->y = y;
-    win->active = 0;
-    fs_run_into_buffer(name, win->buffer, w, h);
-}
-
-// Kernel entry
 void kmain() {
     terminal_clear();
     terminal_write("Booting Betnix OS...\n");
 
     gui_init();
 
-    // Add example windows
-    add_window("shell", 0, 0, MAX_PROG_ROWS, MAX_PROG_COLS);
-    add_window("editor", 0, 10, MAX_PROG_ROWS, MAX_PROG_COLS);
-
-    // Make first window active
-    active_window = 0;
-    windows[0].active = 1;
+    add_window("shell", 0,0,MAX_PROG_ROWS,MAX_PROG_COLS);
+    add_window("editor",0,10,MAX_PROG_ROWS,MAX_PROG_COLS);
+    active_window=0;
+    windows[0].active=1;
 
     terminal_write("Boot complete!\n");
 
-    // Main kernel loop
+    // Add shell & editor tasks
+    task_add(shell_run, "shell");
+    task_add(editor_run, "editor");
+
     while(1) {
-        gui_update();        // Draw windows + cursor
-        gui_handle_input();  // Route keyboard input
-        mouse_update();      // Update cursor position
+        gui_update();
+        gui_handle_input();
+        mouse_update();
+        task_run();
+        task_switch();
     }
 }
 
-// --- GUI functions ---
-void gui_init() {
-    terminal_clear();
-}
+// GUI functions
+void gui_init() { terminal_clear(); }
 
 void draw_window(Window* win) {
     terminal_write("\n");
@@ -89,7 +71,7 @@ void draw_window(Window* win) {
         for(int c=0;c<win->width;c++) {
             char ch = win->buffer[r][c];
             if(!ch) ch=' ';
-            char str[2] = {ch, 0};
+            char str[2]={ch,0};
             terminal_write(str);
         }
         terminal_write("\n");
@@ -102,41 +84,43 @@ void gui_update() {
     for(int i=0;i<window_count;i++)
         draw_window(&windows[i]);
 
-    // Draw cursor at current typing position
     if(cursor_visible) {
         Window* win = &windows[active_window];
         int row = win->height-1;
         int col = kb_len;
-        terminal_move_cursor(row, col); // implement in console.c
-        terminal_write("_");            // underscore cursor
+        terminal_move_cursor(row,col);
+        terminal_write("_");
     }
 }
 
 void gui_handle_input() {
-    char c = keyboard_read();
+    char c=keyboard_read();
     if(c) {
-        Window* win = &windows[active_window];
-
-        if(c == '\b') {
-            if(kb_len > 0) kb_len--;
-            int row = win->height-1;
+        Window* win=&windows[active_window];
+        if(c=='\b') {
+            if(kb_len>0) kb_len--;
+            int row=win->height-1;
             for(int i=0;i<MAX_PROG_COLS;i++)
-                win->buffer[row][i] = (i<kb_len)? kb_buffer[i]:' ';
+                win->buffer[row][i]=(i<kb_len)?kb_buffer[i]:' ';
         }
-        else if(c == '\n') {
-            kb_len = 0;
-        }
-        else if(kb_len < MAX_PROG_COLS-1) {
-            kb_buffer[kb_len++] = c;
-            kb_buffer[kb_len] = 0;
-            int row = win->height-1;
-            for(int i=0;i<kb_len;i++) win->buffer[row][i] = kb_buffer[i];
+        else if(c=='\n') kb_len=0;
+        else if(kb_len<MAX_PROG_COLS-1) {
+            kb_buffer[kb_len++]=c;
+            kb_buffer[kb_len]=0;
+            int row=win->height-1;
+            for(int i=0;i<kb_len;i++) win->buffer[row][i]=kb_buffer[i];
         }
     }
 }
 
-void mouse_update() {
-    // Placeholder: moves cursor diagonally for now
-    mouse_x = (mouse_x+1)%80;
-    mouse_y = (mouse_y+1)%25;
+void add_window(const char* name,int x,int y,int w,int h) {
+    if(window_count>=MAX_WINDOWS) return;
+    Window* win=&windows[window_count++];
+    strncpy(win->title,name,31);
+    win->width=w;
+    win->height=h;
+    win->x=x;
+    win->y=y;
+    win->active=0;
+    fs_run_into_buffer(name,win->buffer,w,h);
 }
