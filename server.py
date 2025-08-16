@@ -155,9 +155,13 @@ def toggle_bluetooth():
 def run_linux():
     command = request.json.get("command", "")
     try:
-        # Run the command on the host Linux system
-        result = subprocess.run(command, shell=True, capture_output=True, text=True)
-        return jsonify({"output": result.stdout + result.stderr})
+        # Split the command into a list of arguments for safety
+        result = subprocess.run(command.split(), capture_output=True, text=True, check=True)
+        return jsonify({"output": result.stdout})
+    except FileNotFoundError:
+        return jsonify({"error": f"Command not found: '{command.split()[0]}'"})
+    except subprocess.CalledProcessError as e:
+        return jsonify({"error": f"Command failed: {e.stderr}"})
     except Exception as e:
         return jsonify({"error": str(e)})
 
