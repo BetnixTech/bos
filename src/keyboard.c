@@ -1,9 +1,6 @@
 #include <stdint.h>
 #include "ports.h"
 
-#define KEYBOARD_DATA_PORT 0x60
-#define KEYBOARD_STATUS_PORT 0x64
-
 // Basic US QWERTY scancode map
 static char keymap[128] = {
     0,  27, '1','2','3','4','5','6','7','8','9','0','-','=', '\b',
@@ -13,14 +10,11 @@ static char keymap[128] = {
 };
 
 char keyboard_read(void) {
-    uint8_t status;
-    char key = 0;
-
-    status = inb(KEYBOARD_STATUS_PORT);
+    uint8_t status = inb(KEYBOARD_CTRL);
     if (status & 0x01) {
-        key = inb(KEYBOARD_DATA_PORT);
-        if (key < 128) {
-            return keymap[key];
+        uint8_t scancode = inb(0x60);
+        if (scancode < 128) {
+            return keymap[scancode];
         }
     }
     return 0;
