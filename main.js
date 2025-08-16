@@ -27,16 +27,100 @@ document.addEventListener("DOMContentLoaded", () => {
 
         switch(app){
             case "calculator":
-                win.innerHTML = `<input id="calc-input" type="text" readonly style="width:100%; font-size:1.2em;">
-                <div>${[7,8,9,'/'].map(i=>`<button>${i}</button>`).join('')}
-                ${[4,5,6,'*'].map(i=>`<button>${i}</button>`).join('')}
-                ${[1,2,3,'-'].map(i=>`<button>${i}</button>`).join('')}
-                ${[0,'.','=','+'].map(i=>`<button>${i}</button>`).join('')}</div>`;
-                const input = win.querySelector("#calc-input");
-                win.querySelectorAll("button").forEach(b => b.addEventListener("click",()=>{
-                    if(b.textContent==="=") input.value=eval(input.value); else input.value+=b.textContent;
-                }));
-                break;
+            win.innerHTML = `
+                <div class="calc-grid">
+                    <input type="text" id="calc-display" value="0" readonly>
+                    <button class="calc-btn clear" data-value="clear">C</button>
+                    <button class="calc-btn backspace" data-value="backspace">←</button>
+                    <button class="calc-btn operator" data-value="/">/</button>
+                    <button class="calc-btn number" data-value="7">7</button>
+                    <button class="calc-btn number" data-value="8">8</button>
+                    <button class="calc-btn number" data-value="9">9</button>
+                    <button class="calc-btn operator" data-value="*">*</button>
+                    <button class="calc-btn number" data-value="4">4</button>
+                    <button class="calc-btn number" data-value="5">5</button>
+                    <button class="calc-btn number" data-value="6">6</button>
+                    <button class="calc-btn operator" data-value="-">-</button>
+                    <button class="calc-btn number" data-value="1">1</button>
+                    <button class="calc-btn number" data-value="2">2</button>
+                    <button class="calc-btn number" data-value="3">3</button>
+                    <button class="calc-btn operator" data-value="+">+</button>
+                    <button class="calc-btn number" data-value="0">0</button>
+                    <button class="calc-btn decimal" data-value=".">.</button>
+                    <button class="calc-btn equals" data-value="=">=</button>
+                </div>
+            `;
+        
+            const display = win.querySelector("#calc-display");
+            let currentInput = '0';
+            let operator = null;
+            let previousInput = null;
+        
+            win.querySelectorAll(".calc-btn").forEach(button => {
+                button.addEventListener("click", () => {
+                    const value = button.dataset.value;
+        
+                    if (button.classList.contains('number') || button.classList.contains('decimal')) {
+                        if (currentInput === '0' && value !== '.') {
+                            currentInput = value;
+                        } else {
+                            currentInput += value;
+                        }
+                        display.value = currentInput;
+                    }
+        
+                    if (button.classList.contains('operator')) {
+                        if (previousInput !== null) {
+                            calculate();
+                        }
+                        operator = value;
+                        previousInput = currentInput;
+                        currentInput = '0';
+                    }
+        
+                    if (value === '=') {
+                        calculate();
+                        operator = null;
+                    }
+        
+                    if (value === 'clear') {
+                        currentInput = '0';
+                        operator = null;
+                        previousInput = null;
+                        display.value = currentInput;
+                    }
+        
+                    if (value === 'backspace') {
+                        currentInput = currentInput.slice(0, -1) || '0';
+                        display.value = currentInput;
+                    }
+                });
+            });
+        
+            function calculate() {
+                const prev = parseFloat(previousInput);
+                const current = parseFloat(currentInput);
+                let result = 0;
+        
+                if (operator === '+') {
+                    result = prev + current;
+                } else if (operator === '-') {
+                    result = prev - current;
+                } else if (operator === '*') {
+                    result = prev * current;
+                } else if (operator === '/') {
+                    if (current === 0) {
+                        alert("Error: Division by zero");
+                        return;
+                    }
+                    result = prev / current;
+                }
+        
+                currentInput = String(result);
+                display.value = currentInput;
+                previousInput = null;
+            }
+            break;
             case "gallery":
                 win.innerHTML = `<div id="gallery-container">
                   <img src="https://picsum.photos/100" style="margin:5px;">
