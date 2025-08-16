@@ -4,26 +4,36 @@ OUTDIR=out
 KERNEL=$(OUTDIR)/kernel.bin
 ISO=bos.iso
 
+# All source files
+SRCS = src/kernel.c src/console.c src/gui.c src/fs.c src/shell.c src/editor.c src/game.c
+OBJS = $(patsubst src/%.c,$(OUTDIR)/%.o,$(SRCS))
+
 all: $(ISO)
 
-$(KERNEL): src/kernel.c src/linker.ld
+# Compile all .c files into .o
+$(OUTDIR)/%.o: src/%.c
 	mkdir -p $(OUTDIR)
-	# You should have a cross-compiler; fallback to native gcc if you haven't set one
-	i686-elf-gcc -ffreestanding -O2 -c src/kernel.c -o $(OUTDIR)/kernel.o || gcc -ffreestanding -m32 -O2 -c src/kernel.c -o $(OUTDIR)/kernel.o
-	i686-elf-ld -T src/linker.ld -o $(KERNEL) $(OUTDIR)/kernel.o || ld -m elf_i386 -T src/linker.ld -o $(KERNEL) $(OUTDIR)/kernel.o
+	i686-elf-gcc -ffreestanding -O2 -c $< -o $@ || gcc -ffreestanding -m32 -O2 -c $< -o $@
 
+# Link all object files into kernel.bin
+$(KERNEL): $(OBJS) src/linker.ld
+	i686-elf-ld -T src/linker.ld -o $(KERNEL) $(OBJS) || ld -m elf_i386 -T src/linker.ld -o $(KERNEL) $(OBJS)
+
+# Create ISO
 iso: $(KERNEL)
 	@mkdir -p iso/boot/grub
 	cp $(KERNEL) iso/boot/kernel.bin
 	cp boot/grub/grub.cfg iso/boot/grub/grub.cfg
 	grub-mkrescue -o $(ISO) iso 2>/dev/null || (echo "grub-mkrescue failed; ensure grub & xorriso installed" && exit 1)
 
+# Dummy target for make
 $(ISO): iso
-	# target to satisfy make
 	@true
 
+# Run in QEMU
 run: $(ISO)
 	qemu-system-i386 -cdrom $(ISO) -m 512M
 
+# Clean build artifacts
 clean:
 	rm -rf iso out $(ISO)
