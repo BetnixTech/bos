@@ -4,11 +4,13 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include "keyboard.c"  // Include keyboard driver
 
-// Maximum windows
 #define MAX_WINDOWS 10
+#define MAX_PROG_ROWS 20
+#define MAX_PROG_COLS 80
+#define CMD_BUF_SIZE 128
 
-// Window structure
 typedef struct {
     char title[32];
     char buffer[MAX_PROG_ROWS][MAX_PROG_COLS];
@@ -17,7 +19,6 @@ typedef struct {
     int active;
 } Window;
 
-// Global window list
 Window windows[MAX_WINDOWS];
 int window_count = 0;
 int active_window = 0;
@@ -34,7 +35,6 @@ size_t kb_len = 0;
 void gui_init();
 void gui_update();
 void gui_handle_input();
-char keyboard_read();
 void mouse_update();
 
 // Add a program window
@@ -68,19 +68,18 @@ void kmain() {
     // Main kernel loop
     while(1) {
         gui_update();        // Draw windows + cursor
-        gui_handle_input();  // Route keyboard + mouse
+        gui_handle_input();  // Route keyboard input
         mouse_update();      // Update cursor position
     }
 }
 
 // --- GUI functions ---
 void gui_init() {
-    // Clear screen
     terminal_clear();
 }
 
 void draw_window(Window* win) {
-    terminal_write("\n"); // start new line
+    terminal_write("\n");
     terminal_write(win->title);
     terminal_write("\n-------------------\n");
     for(int r=0;r<win->height;r++) {
@@ -113,24 +112,15 @@ void gui_handle_input() {
         if(kb_len < MAX_PROG_COLS-1) {
             kb_buffer[kb_len++] = c;
             kb_buffer[kb_len] = 0;
-            // Echo typed character into program buffer last line
             int row = win->height-1;
-            int col = 0;
             for(int i=0;i<kb_len;i++) win->buffer[row][i] = kb_buffer[i];
         }
-        if(c=='\n') kb_len=0; // reset line
+        if(c=='\n') kb_len=0;
     }
 }
 
 void mouse_update() {
-    // Placeholder: just moves cursor diagonally for now
+    // Placeholder: moves cursor diagonally for now
     mouse_x = (mouse_x+1)%80;
     mouse_y = (mouse_y+1)%25;
 }
-
-// --- Keyboard input ---
-char keyboard_read() {
-    // Placeholder: return 0 until real keyboard driver implemented
-    return 0;
-}
-
