@@ -1,5 +1,6 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 import subprocess
+import psutil
 import os
 
 app = Flask(__name__)
@@ -159,6 +160,35 @@ def run_linux():
         return jsonify({"output": result.stdout + result.stderr})
     except Exception as e:
         return jsonify({"error": str(e)})
+
+def get_storage_devices():
+    devices = []
+    for part in psutil.disk_partitions():
+        # Skip system partitions
+        if "rw" in part.opts and ("/media" in part.mountpoint or "/mnt" in part.mountpoint):
+            devices.append({
+                "device": part.device,
+                "mountpoint": part.mountpoint,
+                "fstype": part.fstype
+            })
+    return devices
+
+# List files in a drive
+def list_files(path):
+    try:
+        return os.listdir(path)
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.route("/drives", methods=["GET"])
+def drives():
+    return jsonify(get_storage_devices())
+
+@app.route("/files/<path:filepath>", methods=["GET"])
+def files(filepath):
+    if os.path.isfile(filepath):
+        return send_file(filepath, as_attachment=True)
+    return jsonify(list_files(filepath))
 
 
 if __name__ == "__main__":
