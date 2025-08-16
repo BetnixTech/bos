@@ -3,6 +3,7 @@
 #include "keyboard.c"
 #include "mouse.h"
 #include "task.h"
+#include "timer.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -35,17 +36,26 @@ void gui_handle_mouse();
 void draw_window(Window* win);
 void add_window(const char* name, int x, int y, int w, int h);
 
+extern void shell_run();
+extern void editor_run();
+
 void kmain() {
     terminal_clear();
     terminal_write("Booting Betnix OS...\n");
 
     gui_init();
     mouse_init();
+    task_init();
+    timer_init();
 
-    add_window("shell", 0,0,MAX_PROG_ROWS,MAX_PROG_COLS);
-    add_window("editor",0,10,MAX_PROG_ROWS,MAX_PROG_COLS);
-    active_window=0;
-    windows[0].active=1;
+    // Enable interrupts (PIT timer)
+    asm volatile("sti");
+
+    // Add GUI windows
+    add_window("shell", 0,0,MAX_PROG_COLS,MAX_PROG_ROWS);
+    add_window("editor",0,10,MAX_PROG_COLS,MAX_PROG_ROWS);
+    active_window = 0;
+    windows[0].active = 1;
 
     terminal_write("Boot complete!\n");
 
@@ -53,14 +63,14 @@ void kmain() {
     task_add(shell_run, "shell");
     task_add(editor_run, "editor");
 
+    // Main loop
     while(1) {
         keyboard_update();
         mouse_update();
         gui_handle_input();
         gui_handle_mouse();
         gui_update();
-        task_run();
-        task_switch();
+        task_run(); // run first task manually
     }
 }
 
