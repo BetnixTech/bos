@@ -1,10 +1,25 @@
-ENTRY(kmain)
+ENTRY(_start)
 
 SECTIONS
 {
-  . = 0x00100000; /* load at 1MB */
-  .text : { *(.text) }
-  .rodata : { *(.rodata) }
-  .data : { *(.data) }
-  .bss : { *(.bss COMMON) }
+  . = 1M;
+
+  .multiboot : { *(.multiboot) }
+
+  .text : ALIGN(4096) {
+    *(.text*)
+  }
+
+  .rodata : ALIGN(4096) {
+    *(.rodata*)
+  }
+
+  .data : ALIGN(4096) {
+    *(.data*)
+  }
+
+  .bss : ALIGN(4096) {
+    *(COMMON)
+    *(.bss*)
+  }
 }
